@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "de.example.totemautoinv.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AbstractBoatMixin",
+    "ServerGamePacketListenerMixin",
+    "PlayerActivityInputMixin",
+    "ModuleLicenseMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

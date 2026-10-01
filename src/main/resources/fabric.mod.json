@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "totemautoinv",
+  "version": "${version}",
+  "name": "${display_name}",
+  "description": "Chalk Client modules for Meteor Client.",
+  "authors": ["Krey"],
+  "environment": "client",
+  "entrypoints": {
+    "meteor": ["de.example.totemautoinv.TotemAutoInvAddon"]
+  },
+  "mixins": ["chalk-client.mixins.json"],
+  "icon": "assets/totemautoinv/icon.png",
+  "custom": {
+    "meteor-client:color": "174,92,255",
+    "modmenu": { "parent": { "id": "meteor-client" } }
+  },
+  "depends": {
+    "java": ">=21",
+    "minecraft": ["${mc_version}"],
+    "meteor-client": "*"
+  }
+}
