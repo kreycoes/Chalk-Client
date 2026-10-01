@@ -1,0 +1,111 @@
+plugins {
+    id 'fabric-loom' version '1.15.5'
+    id 'maven-publish'
+}
+
+def betaBuild = project.hasProperty("betaBuild")
+def adminBuild = project.hasProperty("adminBuild")
+def buyerBuild = project.hasProperty("buyerBuild")
+def clientVersion = project.mod_version
+version = betaBuild ? "${clientVersion}-beta-tester" : adminBuild ? "${clientVersion}-admin" : buyerBuild ? "${clientVersion}-lifetime" : clientVersion
+group = project.maven_group
+def displayName = betaBuild ? "Chalk Client Beta Tester ${clientVersion}" : adminBuild ? "Chalk Client ${clientVersion} Admin" : buyerBuild ? "Chalk Client ${clientVersion} Lifetime" : "Chalk Client v${clientVersion}"
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "meteor-maven"
+        url = "https://maven.meteordev.org/releases"
+    }
+    maven {
+        name = "meteor-maven-snapshots"
+        url = "https://maven.meteordev.org/snapshots"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "meteordevelopment:meteor-client:${project.meteor_version}"
+}
+
+configurations {
+    betaProguard
+}
+
+dependencies {
+    betaProguard "com.guardsquare:proguard-base:7.9.1"
+}
+
+tasks.register("obfuscateBetaJar", JavaExec) {
+    group = "build"
+    description = "Obfuscates the separately built Chalk Client Beta Tester JAR."
+    dependsOn tasks.named("remapJar")
+    classpath = configurations.betaProguard
+    mainClass = "proguard.ProGuard"
+    args "-injars", "build/libs/${project.archives_base_name}-${project.version}.jar",
+        "-outjars", "build/libs/${project.archives_base_name}-${project.version}-obfuscated.jar",
+        "@beta-proguard.pro"
+}
+
+tasks.register("obfuscateBuyerJar", JavaExec) {
+    group = "build"
+    description = "Obfuscates the separately built Chalk Client Lifetime JAR."
+    dependsOn tasks.named("remapJar")
+    classpath = configurations.betaProguard
+    mainClass = "proguard.ProGuard"
+    args "-injars", "build/libs/${project.archives_base_name}-${project.version}.jar",
+        "-outjars", "build/libs/${project.archives_base_name}-${project.version}-obfuscated.jar",
+        "@beta-proguard.pro"
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mc_version", project.minecraft_version
+    inputs.property "display_name", displayName
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version, "mc_version": project.minecraft_version, "display_name": displayName
+    }
+
+    // Chalk Glint is a normal built-in resource pack. Copy the same animated
+    // texture to Minecraft's two vanilla glint locations inside that pack.
+    from("src/main/resources/assets/totemautoinv/textures/misc/chalk_galaxy_glint.png") {
+        into "resourcepacks/chalk_glint/assets/minecraft/textures/misc"
+        rename { "enchanted_glint_item.png" }
+    }
+    from("src/main/resources/assets/totemautoinv/textures/misc/chalk_galaxy_glint.png") {
+        into "resourcepacks/chalk_glint/assets/minecraft/textures/misc"
+        rename { "enchanted_glint_armor.png" }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = "UTF-8"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}
